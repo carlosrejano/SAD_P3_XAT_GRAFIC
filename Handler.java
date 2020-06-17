@@ -22,7 +22,6 @@ class Handler implements Runnable {
         channel.configureBlocking(false);
         nickname = name;
         this.myMap = myMap;
-        // Register the socket channel with interest-set set to READ operation
         selKey = channel.register(sel, SelectionKey.OP_READ);
         selKey.attach(this);
         selKey.interestOps(SelectionKey.OP_READ);
@@ -40,14 +39,13 @@ class Handler implements Runnable {
             ex.printStackTrace();
         }
     }
-
-    // Process data by echoing input to output
     synchronized void process() {
         byte[] bytes;
-        byte[] byteNick = nickname.getBytes();
+        byte[] byteNick = (nickname + ": ").getBytes();
         readBuf.flip();
         bytes = new byte[readBuf.remaining()];
         readBuf.get(bytes, 0, bytes.length);
+        System.out.println(bytes);
         byte[] c = new byte[byteNick.length + bytes.length];
         System.arraycopy(byteNick, 0, c, 0, byteNick.length);
         System.arraycopy(bytes, 0, c, byteNick.length, bytes.length);
@@ -57,7 +55,6 @@ class Handler implements Runnable {
         byte[] bytesToSend = stringToSend.getBytes();
         writeBuf = ByteBuffer.wrap(bytesToSend);
 
-        // Set the key's interest to WRITE operation
         selKey.interestOps(SelectionKey.OP_WRITE);
         selKey.selector().wakeup();
     }
@@ -83,6 +80,7 @@ class Handler implements Runnable {
             }
         }
         catch (IOException ex) {
+            channel.close();
             ex.printStackTrace();
             return;
         }
@@ -93,22 +91,21 @@ class Handler implements Runnable {
 
         try {
             for (String key : myMap.keySet()) {
+                System.out.println(key);
                 if(key != nickname){
+                    System.out.println(nickname + ":" + key);
                     numBytes += myMap.get(key).write(writeBuf);
                 }
             }
-            //System.out.println("write(): #bytes read from 'writeBuf' buffer = " + numBytes);
-
             if (numBytes > 0) {
                 readBuf.clear();
                 writeBuf.clear();
-
-                // Set the key's interest-set back to READ operation
                 selKey.interestOps(SelectionKey.OP_READ);
                 selKey.selector().wakeup();
             }
         }
         catch (IOException ex) {
+            channel.close();
             ex.printStackTrace();
         }
     }

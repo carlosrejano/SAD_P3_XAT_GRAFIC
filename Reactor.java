@@ -25,8 +25,6 @@ class Reactor extends Thread {
         serverChannel = ServerSocketChannel.open();
         serverChannel.socket().bind(new InetSocketAddress(port));
         serverChannel.configureBlocking(false);
-
-        // Register the server socket channel with interest-set set to ACCEPT operation
         SelectionKey sk = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         sk.attach(new Acceptor());
     }
@@ -63,6 +61,9 @@ class Reactor extends Thread {
                 nbytes = channel.read(nameBuffer);
                 String name = bytesBufferToString(nameBuffer);
                 if (channel != null && nbytes != -1)
+                    if (myMap.containsKey(name)){
+                        myMap.remove(name);
+                    }
                     myMap.put(name, channel);
                     new Handler(selector, channel, name, myMap);
             }

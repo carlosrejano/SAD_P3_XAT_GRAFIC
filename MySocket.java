@@ -34,7 +34,9 @@ public class MySocket {
     }
     public String readLine(){
         try {
-            return dis.readUTF();
+            byte[] bytes = new byte[1024];
+            dis.read(bytes);
+            return new String(bytes);
         } catch (IOException e) {
             return e.getMessage();
         }
